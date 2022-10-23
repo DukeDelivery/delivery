@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "deploy": "git add . && git commit -m 'f' && git push heroku main && heroku logs --tail"
+    "restart": "cd ../client && npm run build && cd ../server && node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "author": "Del Cudjoe",
   "license": "ISC",
