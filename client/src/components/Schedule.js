@@ -32,7 +32,7 @@ const Schedule = () => {
       <div id="calendar">
         {delivery !== null && <Modal delivery={delivery} setDelivery={setDelivery}/>}
         <Calendar localizer={localizer} defaultView={'week'} onSelectEvent={x => setDelivery(x)} views={['day','week','month']}
-        step={7.5} scrollToTime={new Date('2003-11-30T13:00:00.000Z')} eventPropGetter={eventPropGetter}
+        step={15} scrollToTime={new Date('2003-11-30T13:00:00.000Z')} eventPropGetter={eventPropGetter}
         events={approved ? 
           events.filter(event => event.approved).map(event => {
             return {

@@ -10,22 +10,20 @@ const AdminSetter = ({}) => {
   }
   return (
     <form onSubmit={handleSubmit}>
-      <table style={{marginLeft: 'auto', marginRight: 'auto'}}>
-        <tbody>
-          <tr>
-            <td>new username:</td>
-            <td><input type='text' value={admin.username || ''} onChange={x => setAdmin({...admin, username: x.target.value})} required/></td>
-          </tr>
-          <tr>
-            <td>new password:</td>
-            <td><input type='text' value={admin.password || ''} onChange={x => setAdmin({...admin, password: x.target.value})} required/></td>
-          </tr>
-          <tr>
-            <td>new phone number:</td>
-            <td><input type='tel' value={admin.number || ''} onChange={x => setAdmin({...admin, number: x.target.value})} required/></td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="table">
+        <div className='table-row'>
+          <p className='table-cell'>new username:</p>
+          <input className='table-cell' type='text' value={admin.username || ''} onChange={x => setAdmin({...admin, username: x.target.value})} required/>
+        </div>
+        <div className='table-row'>
+          <p className='table-cell'>new password:</p>
+          <input className='table-cell' type='text' value={admin.password || ''} onChange={x => setAdmin({...admin, password: x.target.value})} required/>
+        </div>
+        <div className='table-row'>
+          <p className='table-cell'>new phone number:</p>
+          <input className='table-cell' type='tel' value={admin.number || ''} onChange={x => setAdmin({...admin, number: x.target.value})} required/>
+        </div>
+      </div>
       <input type='submit' value='update information' />
     </form>
   )

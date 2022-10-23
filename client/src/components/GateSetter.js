@@ -24,16 +24,16 @@ const GateSetter = ({}) => {
   }
   return (
     <>
-      <ul>
+      <div className="table">
         {gates.map(gate => {
           return (
-            <li key={gate.name}>
-              {gate.name}
-              <button onClick={() => handleGateDelete(gate.id)}>Delete</button>
-            </li> 
+            <div className="table-row">
+              <p className='table-cell'>{gate.name}</p>
+              <button className='table-cell' onClick={() => handleGateDelete(gate.id)}>Delete</button>
+            </div> 
           )
         })}
-      </ul>
+      </div>
       <form onSubmit={handleGateSubmit}>
         <input type='text' value={name} onChange={x => setName(x.target.value)} required/>
         <input type='submit' value='Submit'/>
