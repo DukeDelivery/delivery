@@ -19,7 +19,7 @@ const Form = () => {
   const submitForm = (event) => {
     event.preventDefault();
     delivery.start = toMilliseconds(delivery.start);
-    delivery.end = delivery.start + delivery.duration;
+    delivery.end = parseInt(delivery.start) + parseInt(delivery.duration);
     for (const field in delivery) {
       if (delivery[field] === '') delivery[field] = null;
     }
@@ -39,6 +39,8 @@ const Form = () => {
       return;
     }
     if (delivery.start < times[day].start || delivery.end > times[day].end) {
+      console.log(delivery.end);
+      console.log(times[day].end);
       alert(`Deliveries on ${day}s must be between ${toTimeString(times[day].start)} and ${toTimeString(times[day].end)}.`);
       window.scrollTo(0, 0);
       return;
@@ -91,8 +93,8 @@ const Form = () => {
         <div className="table-row">
           <p className='table-cell'>Gate:</p>
           <select className='table-cell' onChange={x => handleChange(x.target.value, 'gate')} required>
-            <option value="" disabled selected>Choose gate</option>
-            {gates.map(gate => <option value={gate.name}>{gate.name}</option>)}
+            <option value="" key='default' disabled selected>Choose gate</option>
+            {gates.map(gate => <option  key={gate.name} value={gate.name}>{gate.name}</option>)}
           </select>
         </div>
         <div className="table-row">

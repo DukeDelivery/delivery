@@ -1,12 +1,14 @@
 const express = require('express');
 const { sendText } = require('../util/util');
 const Delivery = require('../models/delivery');
+const Company = require('../models/company');
 const { toDateTimeString } = require('../util/time');
 const Admin = require('../models/admin');
+const delivery = require('../models/delivery');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   Delivery.find({}).then(x => res.json(x));
 });
 
@@ -19,6 +21,8 @@ router.post('/', async (req, res) => {
   delivery.save();
   message = `Delivery of ${delivery.description} scheduled for ${toDateTimeString(delivery.start)}.`
   Admin.findOne({}).then(x => sendText(x.number, message));
+  const company = await Company.findOne({'name': delivery.company});
+  company.contacts.forEach(contact => sendText(contact.number, message));
   sendText(delivery.contactNumber, message);
   res.end('Delivery added to Database');
 });

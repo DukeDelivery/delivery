@@ -3,8 +3,9 @@ const User = require('./models/user');
 const Delivery = require('./models/delivery');
 const Admin = require('./models/admin');
 const WorkTime = require('./models/workTime');
+const Company = require('./models/company');
 const msg = require('./util/message');
-const { SEC, MIN, HOUR, DAY, toDateString, toTimeString, getTime, getWeekday } = require('./util/time');
+const { HOUR, DAY, toDateString, toTimeString, getTime, getWeekday } = require('./util/time');
 const { sendText } = require('./util/util');
 
 const main = async (req) => {
@@ -95,7 +96,6 @@ const main = async (req) => {
         }
           
         case 'complete': {
-          console.log(user.delivery.end);
           if (message.toLowerCase() !== 'yes') {
             user.delivery.state = 'edit';
             user.save();

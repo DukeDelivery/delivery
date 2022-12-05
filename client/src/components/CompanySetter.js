@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import db from '../utils/request'
+import Popup from 'reactjs-popup';
 const CompanySetter = () => {
   const [companies, setCompanies] = useState([]);
   const [name, setName] = useState('');
@@ -32,7 +33,8 @@ const Company = ({ company, setCompanies }) => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
 
-  const handleContactSubmit = () => {
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
     const c = {
       ...company,
       contacts: [...company.contacts, {name: name, number: number}],
@@ -63,29 +65,36 @@ const Company = ({ company, setCompanies }) => {
         <div className='table-cell'><button onClick={() => setOpen(open => !open)}>{!open ? <>View Contacts</>:<>Hide Contacts</>}</button></div>
         <div className='table-cell'><button onClick={() => handleDelete(company.id)}>Delete</button></div>
       </div>
-      {open && 
-        <>
-          <div className='table-row'>
-            <p className='table-cell'>Name:</p>
-            <p className='table-cell'>Number:</p>
-            <p className='table-cell'>Delete:</p>
-          </div>
-          {company.contacts.map(contact => {
-            return (
-              <div className='table-row'>
-                <p className='table-cell'>{contact.name}</p>
-                <p className='table-cell'>{contact.number}</p>
-                <button className='table-cell' onClick={() => handleContactDelete(contact.name, contact.number)}>Delete Contact</button>
+      {open &&
+          <Popup modal nested open onClose={() => setOpen(false)} >
+            <div className="modal">
+              <button className="close" onClick={() => setOpen(false)}>
+                &times;
+              </button>
+              <div className='table'>
+                <div className='table-row'>
+                  <p className='table-cell'>Name:</p>
+                  <p className='table-cell'>Number:</p>
+                  <p className='table-cell'>Delete:</p>
+                </div>
+                {company.contacts.map(contact => {
+                return (
+                  <div className='table-row'>
+                    <p className='table-cell'>{contact.name}</p>
+                    <p className='table-cell'>{contact.number}</p>
+                    <button className='table-cell' onClick={() => handleContactDelete(contact.name, contact.number)}>Delete Contact</button>
+                  </div>
+                )
+              })}
+              <form className='table-row' onSubmit={handleContactSubmit}>
+                <div className='table-cell'><input type='text' placeholder='Contact Name' value={name} onChange={x => setName(x.target.value)}/></div>
+                <div className='table-cell'><input type='text' placeholder='Contact Number' value={number} onChange={x => setNumber(x.target.value)}/></div>
+                <div className='table-cell'><input type='submit' value="Add Contact" /></div>
+              </form>
               </div>
-            )
-          })}
-          <form className='table-row' onSubmit={handleContactSubmit}>
-            <div className='table-cell'><input type='text' placeholder='Contact Name' value={name} onChange={x => setName(x.target.value)}/></div>
-            <div className='table-cell'><input type='text' placeholder='Contact Number' value={number} onChange={x => setNumber(x.target.value)}/></div>
-            <div className='table-cell'><input type='submit' value="Add Contact" /></div>
-          </form>
-        </>
-      }
+            </div>
+          </Popup>
+          }
     </>
   )
 }
