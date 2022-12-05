@@ -21,6 +21,7 @@ router.post('/', async (req, res) => {
   delivery.save();
   message = `Delivery of ${delivery.description} scheduled for ${toDateTimeString(delivery.start)}.`
   Admin.findOne({}).then(x => sendText(x.number, message));
+
   const company = await Company.findOne({'name': delivery.company});
   company.contacts.forEach(contact => sendText(contact.number, message));
   sendText(delivery.contactNumber, message);
@@ -37,7 +38,11 @@ router.patch('/:id', async (req, res) => {
   } else {
     message = `Your '${delivery.description}' delivery on ${toDateTimeString(delivery.start)} has been edited by the administrator. See calendar for details.`
   }
+
+  const company = await Company.findOne({'name': delivery.company});
+  company.contacts.forEach(contact => sendText(contact.number, message));
   sendText(delivery.contactNumber, message);
+
   Delivery.findByIdAndUpdate(req.body.id, {...req.body})
     .then(x => res.json(x));
 })
@@ -46,6 +51,10 @@ router.delete('/:id', async (req, res) => {
   const delivery = await Delivery.findById(req.params.id);
   const message = `Your '${delivery.description}' delivery for ${toDateTimeString(delivery.start)} has been deleted by the administrator.`
   sendText(delivery.contactNumber, message);
+
+  const company = await Company.findOne({'name': delivery.company});
+  company.contacts.forEach(contact => sendText(contact.number, message));
+  
   delivery.delete()
     .then(() => res.end('Delivery removed from database'));
 })
