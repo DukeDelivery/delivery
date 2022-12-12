@@ -9,14 +9,16 @@
 }
 
 #root {
-  background: linear-gradient(0deg, rgba(0,157,72,1) 0%, rgba(255,255,255,1) 100%);
+  background: linear-gradient(0deg, rgb(89, 59, 190) 0%, rgba(255,255,255,1) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}
 footer {
-  background-color: #00400B;
+  background-color: #2b0b58;
   color: white;
   min-height: 100px;
   margin: 0;
@@ -28,7 +30,7 @@ footer {
 body {
   margin: 0;
 }
-button, input, textarea {
+button, input, textarea, select {
   border-color: gray;
   border-radius: 10px;
   padding: 10px;
@@ -37,10 +39,15 @@ button, input[type=submit] {
   background-color: white;
 }
 
+#menu {
+  padding-bottom: 10px;
+}
+
 #title {
   text-align: center;
   position: relative;
 }
+
 
 #adminLogin {
   text-decoration: underline;
@@ -52,7 +59,6 @@ button, input[type=submit] {
 }
 
 #calendar {
-  margin-top: 5%;
   margin-bottom: 5%;
   height: 1000px;
   width: 80%;
@@ -63,7 +69,14 @@ form {
   text-align: center;
 }
 #deliveryForm {
-  margin: 10px;
+  background-color: rgb(255, 255, 255);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  min-width: 600px;
+  padding: 2%;
+  margin: 5%;
 }
 table {
   text-align: center;

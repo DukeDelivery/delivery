@@ -4,7 +4,6 @@ const Delivery = require('../models/delivery');
 const Company = require('../models/company');
 const { toDateTimeString } = require('../util/time');
 const Admin = require('../models/admin');
-const delivery = require('../models/delivery');
 
 const router = express.Router();
 
@@ -23,7 +22,7 @@ router.post('/', async (req, res) => {
   Admin.findOne({}).then(x => sendText(x.number, message));
 
   const company = await Company.findOne({'name': delivery.company});
-  company.contacts.forEach(contact => sendText(contact.number, message));
+  company.contacts.forEach(contact => sendText(contact.number, message)); 
   sendText(delivery.contactNumber, message);
   res.end('Delivery added to Database');
 });
@@ -54,7 +53,7 @@ router.delete('/:id', async (req, res) => {
 
   const company = await Company.findOne({'name': delivery.company});
   company.contacts.forEach(contact => sendText(contact.number, message));
-  
+
   delivery.delete()
     .then(() => res.end('Delivery removed from database'));
 })

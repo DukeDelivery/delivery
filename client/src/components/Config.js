@@ -5,7 +5,7 @@ import CompanySetter from "./CompanySetter";
 
 const Config = () => {
   return (
-    <div style={{textAlign: 'center'}}>
+    <div id='deliveryForm'>
       <h2>Gates</h2>
       <GateSetter/>
       <h2>Companies</h2>

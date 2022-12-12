@@ -15,11 +15,11 @@ const App = () => {
 
   return (
     <AdminContext.Provider value={{admin, setAdmin}}>
-      <h2 id="title">
+      <h1 id="title">
         {!admin && <>Delivery Scheduling Application</>}
-        {admin && <>Delivery Scheduling Application -Admin</>}
-        {!admin && <Login/>}
-      </h2>
+        {admin && <>Delivery Scheduling Application - Admin</>}
+      </h1>
+      {!admin && <Login/>}
       <Menu current={mode} setCurrent={setMode}/>
       <Modes mode={mode}/>
     </AdminContext.Provider>

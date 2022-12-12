@@ -28,7 +28,7 @@ const Schedule = () => {
   const localizer = momentLocalizer(moment);
   return (
     <EventsContext.Provider value={{events, setEvents}}>
-      <button onClick={() => setApproved(approved => !approved)} >{approved ? "Show All" : "Show Approved"} </button>
+        <button onClick={() => setApproved(approved => !approved)} >{approved ? "Show All" : "Show Approved"} </button>
       <div id="calendar">
         {delivery !== null && <Modal delivery={delivery} setDelivery={setDelivery}/>}
         <Calendar localizer={localizer} defaultView={'week'} onSelectEvent={x => setDelivery(x)} views={['day','week','month']}
