@@ -56,6 +56,7 @@ const main = async (req) => {
         case 'start': {
           try {
             user.delivery.start = parse(message, 'time');
+            user.delivery.end = user.delivery.start + 1*HOUR;
           } catch {
             return msg.error('start');
           }
@@ -69,9 +70,9 @@ const main = async (req) => {
           if (user.delivery.start < workTime[day].start || user.delivery.start > workTime[day].end) {
             return `Deliveries on ${day}s must be between ${toTimeString(workTime[day].start)} and ${toTimeString(workTime[day].end)}\nPlease provide a valid time.\nReply 'cancel' to cancel delivery.`
           }
-          user.delivery.state = 'end';
+          user.delivery.state = next(user);
           user.save();
-          return msg.prompt('end');
+          return msg.prompt(user.delivery.state);
         }
           
         case 'end': {
