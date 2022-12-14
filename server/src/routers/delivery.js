@@ -52,7 +52,7 @@ router.delete('/:id', async (req, res) => {
   sendText(delivery.contactNumber, message);
 
   const company = await Company.findOne({'name': delivery.company});
-  company.contacts.forEach(contact => sendText(contact.number, message));
+  //company.contacts.forEach(contact => sendText(contact.number, message));
 
   delivery.delete()
     .then(() => res.end('Delivery removed from database'));
