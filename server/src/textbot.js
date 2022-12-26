@@ -1,11 +1,10 @@
-const mongoose = require('mongoose');
 const User = require('./models/user');
 const Delivery = require('./models/delivery');
 const Admin = require('./models/admin');
 const WorkTime = require('./models/workTime');
 const Company = require('./models/company');
-const msg = require('./util/message');
-const { HOUR, DAY, toDateString, toTimeString, getTime, getWeekday } = require('./util/time');
+const Gate = require('./models/gate');
+const { HOUR, DAY, toDateString, toTimeString, getTime, getWeekday, parseDate, parseTime } = require('./util/time');
 const { sendText } = require('./util/util');
 
 const main = async (req) => {
@@ -32,70 +31,182 @@ const main = async (req) => {
         user.delivery = null;
         user.state = 'default';
         user.save();
-        return 'Your delivery has been cancelled.';
+        return 'Your delivery request has been cancelled.';
       }
       
       switch (user.delivery.state) {
 
         case 'date': {
           try {
-            user.delivery.date = parse(message, 'date');
+            user.delivery.date = parseDate(message);
           } catch {
-            return msg.error('date');
+            return "Given date could not be understood. Please use MM/DD format.\nReply 'info' for help.";
+          }
+          if (user.delivery.date - new Date().valueOf() < 2*DAY) {
+            user.delivery.state = 'date';
+            user.save();
+            return `Deliveries must be scheduled 48 hours in advance. Please provide another date.\nReply 'cancel' to cancel delivery request.`
           }
           const workTime = await WorkTime.findOne({});
           const day = getWeekday(user.delivery.date);
           if (!workTime[day].active) {
             return `Deliveries cannot be scheduled on ${day}s. Please provide another date (MM/DD).\nReply 'cancel' to cancel delivery request.`
           }
-          user.delivery.state = 'start';
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+
+          user.delivery.state = 'time';
           user.save();
-          return msg.prompt('start');
+          return 'What is the start time of your delivery (HH:MM AM/PM)?';
         }
           
-        case 'start': {
+        case 'time': {
           try {
-            user.delivery.start = parse(message, 'time');
+            user.delivery.start = parseTime(message);
             user.delivery.end = user.delivery.start + 1*HOUR;
           } catch {
-            return msg.error('start');
-          }
-          if (user.delivery.date + user.delivery.start - new Date().valueOf() < 2*DAY) {
-            user.delivery.state = 'date';
-            user.save();
-            return `Deliveries must be scheduled 48 hours in advance. Please provide another date.\nReply 'cancel' to cancel delivery request.`
+            return "Given time could not be understood. Please use HH:MM AM/PM format.\nReply 'info' for help.";
           }
           const day = getWeekday(user.delivery.start);
           const workTime = await WorkTime.findOne({});
           if (user.delivery.start < workTime[day].start || user.delivery.start > workTime[day].end) {
             return `Deliveries on ${day}s must be between ${toTimeString(workTime[day].start)} and ${toTimeString(workTime[day].end)}\nPlease provide a valid time.\nReply 'cancel' to cancel delivery.`
           }
-          user.delivery.state = next(user);
-          user.save();
-          return msg.prompt(user.delivery.state);
-        }
-          
-        case 'end': {
-          try {
-            user.delivery.end = user.delivery.start + parse(message, 'gate')*HOUR;
-          } catch {
-            return msg.error('end');
-          }
-          const day = getWeekday(user.delivery.start);
-          const workTime = await WorkTime.findOne({});
-          if (user.delivery.end < workTime[day].start || user.delivery.end > workTime[day].end) {
-            user.delivery.state = 'start';
-            user.delivery.start = undefined;
-            user.delivery.end = undefined;
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
             user.save();
-            return `Deliveries on ${day}s must be between ${toTimeString(workTime[day].start)} and ${toTimeString(workTime[day].end)}\nPlease provide new start time.\nReply 'cancel' to cancel delivery.`
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
           }
-          user.delivery.state = next(user);
+
+          user.delivery.state = 'company';
           user.save();
-          if (user.delivery.state == 'complete') return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          return msg.prompt(user.delivery.state);
+          const companies = await Company.find({});
+          let ret = "Please respond with the number of your company:\n";
+          for (let i=0; i<companies.length; i++) {
+            ret = ret + `${i+1}: ${companies[i].name}\n`;
+          }
+          return ret;
         }
+
+        case 'company': {
+          const companies = await Company.find({});
+          try {
+            user.delivery.company = companies[parseInt(message)-1].name;
+          } catch {
+            return "Please respond with a valid number";
+          }
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+
+          user.delivery.state = "description";
+          user.save();
+          return 'What is the item being delivered?';
+
+        }
+
+        case 'description': {
+          user.delivery.description = message;
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
           
+          user.delivery.state = 'gate';
+          user.save();
+          const gates = await Gate.find({});
+          let ret = "Please respond with the number of your gate:\n";
+          for (let i=0; i<gates.length; i++) {
+            ret = ret + `${i+1}: ${gates[i].name}\n`;
+          }
+          return ret;
+        }
+
+        case 'gate': {
+          const gates = await Gate.find({});
+          try {
+            user.delivery.gate = gates[parseInt(message)-1].name;
+          } catch {
+            return "Please respond with a valid number";
+          }
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+          
+          user.delivery.state = "location";
+          user.save();
+          return 'What is the drop-off location for your delivery?';
+        }
+
+        case 'location': {
+          user.delivery.location = message;
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+          
+          user.delivery.state = "contactName";
+          user.save();
+          return 'Who is the contact for your delivery?';
+        }
+
+        case 'contactName': {
+          user.delivery.contactName = message;
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+          
+          user.delivery.state = "contactNumber";
+          user.save();
+          return 'What is the number of the contact for your delivery? Reply "same" if you are using the contact number to schedule this delivery.';
+        }
+
+        case 'contactNumber': {
+          if (message === 'same') {
+            user.delivery.contactNumber = user.number;
+          } else {
+            user.delivery.contactNumber = message;
+          }
+
+          if (user.delivery.edit) {
+            user.delivery.state = 'complete';
+            user.save();
+            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          }
+          
+          user.delivery.state = 'notes';
+          user.save();
+          return "Please reply with any additional notes for your delivery (reply 'done' for no note)";
+        }
+        
+        case 'notes': {
+          if (message !== 'done') {
+            user.delivery.notes = message;
+          }
+
+          user.delivery.state = 'complete';
+          user.save();
+          return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+        }
+
         case 'complete': {
           if (message.toLowerCase() !== 'yes') {
             user.delivery.state = 'edit';
@@ -110,10 +221,8 @@ const main = async (req) => {
             completed: false,
             date: undefined,
             state: undefined,
+            edit: undefined,
           });
-          if (delivery.notes.toLowerCase() === 'done') {
-            delivery.notes = undefined;
-          }
           delivery.save();
           const text = `Delivery of ${delivery.description} scheduled for ${delivery.start}.`
           Admin.findOne({}).then(x => sendText(x.number, text));
@@ -124,29 +233,36 @@ const main = async (req) => {
         }
           
         case 'edit': {
+          let field = 'none';
           if (user.delivery.hasOwnProperty(message.toLowerCase())) {
-            delete user.delivery[message.toLowerCase()];
-            user.delivery.state = message.toLowerCase();
+            field = message.toLowerCase();
+          } else if (message.toLowerCase() === 'contact name') {
+            field = 'contactName';
+          } else if (message.toLowerCase() === 'contact number') {
+            field = 'contactNumber';
+          }
+          if (field !== 'none') {
+            user.delivery.state = field;
+            user.delivery.edit = true;
             user.save();
-            return msg.prompt(user.delivery.state);
+            if (field === 'company') {
+              const companies = await Company.find({});
+              let ret = "Please respond with the number of your company:\n";
+              for (let i=0; i<companies.length; i++) {
+                ret = ret + `${i+1}: ${companies[i].name}\n`;
+              }
+              return ret;
+            } else if (field === 'gate') {
+              const gates = await Gate.find({});
+              let ret = "Please respond with the number of your gate:\n";
+              for (let i=0; i<gates.length; i++) {
+                ret = ret + `${i+1}: ${gates[i].name}\n`;
+              }
+              return ret;
+            } 
+            else return "What is the new value?";
           }
           else return "Given field could not be understood. Please use exact field name from preceding message.\nReply 'info' for help.";
-        }
-         
-        default: {
-          try {
-            user.delivery[user.delivery.state] = parse(message, user.delivery.state);
-          } catch {
-            return msg.error(user.delivery.state);
-          }
-          user.delivery.state = next(user);
-          user.save();
-          if (user.delivery.state !== 'complete') {
-            return msg.prompt(user.delivery.state);
-          } 
-          else {
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
         }
       }    
     }  
@@ -154,9 +270,9 @@ const main = async (req) => {
     case 'schedule': {
       let date = null;
       try {
-        date = parse(message, 'date');
+        date = parseDate(message);
       } catch {
-        return msg.error('date');
+        return "Given date could not be understood. Please use MM/DD format.\nReply 'info' for help.";
       }
       user.state = 'default';
       user.save();
@@ -202,13 +318,12 @@ const main = async (req) => {
           user.state = 'delivery';
           user.delivery = {
             state: 'date',
-            contactNumber: user.number,
           };
           user.save();
-          return msg.prompt('date');
+          return 'What is the date for your delivery (MM/DD)?';
 
         case 'info':
-          return "Reply 'delivery' to schedule a new delivery.\nReply 'schedule' to see the schedule for a day.\nReply 'cancel' to cancel delivery request";
+          return "Reply 'new' to schedule a new delivery.\nReply 'schedule' to see the schedule for a day.\nReply 'cancel' to cancel delivery request";
         
         case 'map':
           return "Site Map:"
@@ -220,85 +335,17 @@ const main = async (req) => {
       
     }
 };
-const next = (user) => {
-  const params = ['company', 'description', 'contactName', 'contactNumber', 'gate', 'location', 'notes'];
-  for (x of params) {
-    if (user.delivery[x] === undefined) return x;
-  }
-  return 'complete';
-};
-const parse = (string, type) => { 
-  switch (type) {
-    case 'gate':
-      const num = parseInt(string);
-      if (num) return num;
-      throw 100;
-    case 'date':
-      const monthLength = [31,28,31,30,31,30,30,31,30,31,30,31];
-      let month = 0;
-      let day = 0;
-      let year = new Date().getFullYear();
-      if (string === 'today') {
-        date = new Date()
-        date.setHours(0, 0, 0, 0);
-        return date.valueOf();
-      }
-      else if (string === 'yesterday') {
-        date = new Date()
-        date.setHours(0, 0, 0, 0);
-        return date.valueOf() - DAY;
-      }
-      else if (string === 'tomorrow') {
-        date = new Date()
-        date.setHours(0, 0, 0, 0);
-        return date.valueOf() + DAY;
-      }
-      else {
-        const arr = string.split('/');
-        if (arr.length != 2) throw 100;
-        try {
-          month = parseInt(arr[0]-1);
-          day = parseInt(arr[1]);
-        } catch {
-          throw 100;
-        }
-        if (month < 0 || month > 11) {
-          throw 100;
-        }
-        if (day < 0 || day > monthLength[month]) {
-          throw 100;
-        }
-      }
-      if(new Date().getMonth() > month) year++;
-      return new Date(year, month, day).valueOf();
-    case 'time':
-      if (string == '') return null;
-      var time = string.match(/(\d+)(:(\d\d))?\s*(p?)/i);	
-      if (time == null) return null;
-      
-      var hours = parseInt(time[1],10);	 
-      if (hours == 12 && !time[4]) {
-          hours = 0;
-      }
-      else {
-        hours += (hours < 12 && time[4])? 12 : 0;
-      }
-      return (hours*3600000) + (parseInt(time[3],10) || 0)*60000;
-    default:
-      return string;
-  }
-}
+
 const displayDelivery = (delivery) => {
   const ret = `Date: ${toDateString(delivery.date)}
-  Start: ${toTimeString(delivery.start)}
-  End: ${toTimeString(delivery.end)}
+  Time: ${toTimeString(delivery.start)}
   Company: ${delivery.company}
   Description: ${delivery.description}
   Gate: ${delivery.gate}
   Location: ${delivery.location}
   Contact Name: ${delivery.contactName}
   Contact Number: ${delivery.contactNumber}
-  Additional Notes: ${delivery.notes}`;
+  Notes: ${delivery.notes}`;
   return ret;
 }
 

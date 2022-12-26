@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   state: String,
   delivery: {
     state: String,
+    edit: Boolean,
     company: String,
     description: String,
     date: Number,

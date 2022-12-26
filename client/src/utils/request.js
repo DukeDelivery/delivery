@@ -1,5 +1,5 @@
 import axios from 'axios';
-const url = 'http://quikcal.com';
+const url = '';
 
 const get = (path) => {
   return axios.get(`${url}/${path}`);
