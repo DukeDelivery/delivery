@@ -8,7 +8,6 @@ const deliverySchema = new mongoose.Schema({
   contactName: String,
   contactNumber: String,
   gate: String, 
-  location: String,
   schedName: String,
   schedNumber: String,
   supplier: String,

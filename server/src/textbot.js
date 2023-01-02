@@ -23,17 +23,14 @@ const main = async (req) => {
     User.findByIdAndDelete(user._id).then(x =>{});
     return "Deleted user.";
   }
-  
   switch (user.state) {
 
     case 'delivery': {
       if (message.toLowerCase() == 'cancel') {
         user.delivery = null;
-        user.state = 'default';
-        user.save();
-        return 'Your delivery request has been cancelled.';
+        user.state = 'cancel';
       }
-      
+      let skip = false;
       switch (user.delivery.state) {
 
         case 'date': {
@@ -43,31 +40,21 @@ const main = async (req) => {
             return "Given date could not be understood. Please use MM/DD format.\nReply 'info' for help.";
           }
           if (user.delivery.date - new Date().valueOf() < 2*DAY) {
-            user.delivery.state = 'date';
-            user.save();
             return `Deliveries must be scheduled 48 hours in advance. Please provide another date.\nReply 'cancel' to cancel delivery request.`
           }
           const workTime = await WorkTime.findOne({});
           const day = getWeekday(user.delivery.date);
           if (!workTime[day].active) {
-            return `Deliveries cannot be scheduled on ${day}s. Please provide another date (MM/DD).\nReply 'cancel' to cancel delivery request.`
+            return `Deliveries cannot be scheduled on ${day}s. Please provide another date.\nReply 'cancel' to cancel delivery request.`
           }
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-
           user.delivery.state = 'time';
-          user.save();
-          return 'What is the start time of your delivery (HH:MM AM/PM)?';
+          break;
         }
           
         case 'time': {
           try {
             user.delivery.start = parseTime(message);
-            user.delivery.end = user.delivery.start + 1*HOUR;
+            user.delivery.end = user.delivery.start + 0.5*HOUR;
           } catch {
             return "Given time could not be understood. Please use HH:MM AM/PM format.\nReply 'info' for help.";
           }
@@ -76,23 +63,9 @@ const main = async (req) => {
           if (user.delivery.start < workTime[day].start || user.delivery.start > workTime[day].end) {
             return `Deliveries on ${day}s must be between ${toTimeString(workTime[day].start)} and ${toTimeString(workTime[day].end)}\nPlease provide a valid time.\nReply 'cancel' to cancel delivery.`
           }
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-
           user.delivery.state = 'company';
-          user.save();
-          const companies = await Company.find({});
-          let ret = "Please respond with the number of your company:\n";
-          for (let i=0; i<companies.length; i++) {
-            ret = ret + `${i+1}: ${companies[i].name}\n`;
-          }
-          return ret;
+          break;
         }
-
         case 'company': {
           const companies = await Company.find({});
           try {
@@ -100,38 +73,14 @@ const main = async (req) => {
           } catch {
             return "Please respond with a valid number";
           }
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-
           user.delivery.state = "description";
-          user.save();
-          return 'What is the item being delivered?';
-
+          break;
         }
-
         case 'description': {
           user.delivery.description = message;
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-          
           user.delivery.state = 'gate';
-          user.save();
-          const gates = await Gate.find({});
-          let ret = "Please respond with the number of your gate:\n";
-          for (let i=0; i<gates.length; i++) {
-            ret = ret + `${i+1}: ${gates[i].name}\n`;
-          }
-          return ret;
+          break;
         }
-
         case 'gate': {
           const gates = await Gate.find({});
           try {
@@ -139,99 +88,59 @@ const main = async (req) => {
           } catch {
             return "Please respond with a valid number";
           }
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-          
-          user.delivery.state = "location";
-          user.save();
-          return 'What is the drop-off location for your delivery?';
+          user.delivery.state = "trucks";
+          break;
         }
-
-        case 'location': {
-          user.delivery.location = message;
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+        case 'trucks': {
+          if (isNaN(parseInt(message))) {
+            return "Response could not be understood. Please respond with a number. Reply 'info' for help.";
           }
-          
+          user.delivery.trucks = parseInt(message);
           user.delivery.state = "contactName";
-          user.save();
-          return 'Who is the contact for your delivery?';
+          break;
         }
-
         case 'contactName': {
           user.delivery.contactName = message;
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-          
           user.delivery.state = "contactNumber";
-          user.save();
-          return 'What is the number of the contact for your delivery? Reply "same" if you are using the contact number to schedule this delivery.';
+          break;
         }
-
         case 'contactNumber': {
           if (message === 'same') {
             user.delivery.contactNumber = user.number;
           } else {
             user.delivery.contactNumber = message;
           }
-
-          if (user.delivery.edit) {
-            user.delivery.state = 'complete';
-            user.save();
-            return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
-          }
-          
           user.delivery.state = 'notes';
-          user.save();
-          return "Please reply with any additional notes for your delivery (reply 'done' for no note)";
+          break;
         }
-        
         case 'notes': {
           if (message !== 'done') {
             user.delivery.notes = message;
           }
-
           user.delivery.state = 'complete';
-          user.save();
-          return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+          break;
         }
-
         case 'complete': {
           if (message.toLowerCase() !== 'yes') {
             user.delivery.state = 'edit';
-            user.save();
-            return 'Which field needs to be updated?';
+          } else {
+            const delivery = new Delivery({
+              ...user.delivery,
+              start: user.delivery.date + user.delivery.start,
+              end: user.delivery.date + user.delivery.end,
+              approved: false,
+              completed: false,
+              date: undefined,
+              state: undefined,
+              edit: undefined,
+            });
+            delivery.save();
+            const text = `Delivery of ${delivery.description} scheduled for ${delivery.start}.`
+            Admin.findOne({}).then(x => sendText(x.number, text));
+            user.delivery.state = 'save';
           }
-          const delivery = new Delivery({
-            ...user.delivery,
-            start: user.delivery.date + user.delivery.start,
-            end: user.delivery.date + user.delivery.end,
-            approved: false,
-            completed: false,
-            date: undefined,
-            state: undefined,
-            edit: undefined,
-          });
-          delivery.save();
-          const text = `Delivery of ${delivery.description} scheduled for ${delivery.start}.`
-          Admin.findOne({}).then(x => sendText(x.number, text));
-          user.delivery = undefined;
-          user.state = 'default';
-          user.save();
-          return 'Your delivery has been scheduled.\nThank You.';
-        }
-          
+          break;
+        }   
         case 'edit': {
           let field = 'none';
           if (user.delivery.hasOwnProperty(message.toLowerCase())) {
@@ -241,32 +150,22 @@ const main = async (req) => {
           } else if (message.toLowerCase() === 'contact number') {
             field = 'contactNumber';
           }
-          if (field !== 'none') {
-            user.delivery.state = field;
-            user.delivery.edit = true;
-            user.save();
-            if (field === 'company') {
-              const companies = await Company.find({});
-              let ret = "Please respond with the number of your company:\n";
-              for (let i=0; i<companies.length; i++) {
-                ret = ret + `${i+1}: ${companies[i].name}\n`;
-              }
-              return ret;
-            } else if (field === 'gate') {
-              const gates = await Gate.find({});
-              let ret = "Please respond with the number of your gate:\n";
-              for (let i=0; i<gates.length; i++) {
-                ret = ret + `${i+1}: ${gates[i].name}\n`;
-              }
-              return ret;
-            } 
-            else return "What is the new value?";
+          if (field === 'none') {
+            return "Given field could not be understood. Please use exact field name from preceding message.\nReply 'info' for help.";
           }
-          else return "Given field could not be understood. Please use exact field name from preceding message.\nReply 'info' for help.";
+          user.delivery.state = field;
+          user.delivery.edit = true;
+          skip = true;
+          break;
         }
-      }    
-    }  
 
+      }
+      if (user.delivery.edit && !skip) {
+        user.delivery.edit = false;
+        user.delivery.state = 'complete';
+      }
+      break;    
+    }  
     case 'schedule': {
       let date = null;
       try {
@@ -274,66 +173,173 @@ const main = async (req) => {
       } catch {
         return "Given date could not be understood. Please use MM/DD format.\nReply 'info' for help.";
       }
-      user.state = 'default';
-      user.save();
-      const deliveries = await Delivery.find({
-        start: {
-          $gt: date,
-          $lt: date + DAY
-        }
-      }).sort({'start': 1})
-      if (deliveries.length === 0) return `There are no deliveries scheduled for ${toDateString(date)}.`
-      let ret = 'Deliveries:\n';
-      deliveries.forEach(delivery => {
-        ret = ret.concat(`${toTimeString(getTime(delivery.start))}- ${toTimeString(getTime(delivery.end))}: ${delivery.description} for ${delivery.company}\n`);
-      })
-      return ret;
+      user.delivery.state = 'schedule';
+      user.schedule = {
+        'date': date,
+      }
+      break;
     }
       
     default: {
       switch (message.toLowerCase()) {
 
-        case 'schedule':
+        case 'schedule': {
           user.state = 'schedule';
-          user.save();
-          return 'What date (MM/DD) do you want to view?';
-        case 'today':
+          user.schedule = {};
+          break;
+         }
+        case 'today': {
           const today = new Date()
           today.setHours(0,0, 0, 0);
           const date = today.valueOf();
-          const deliveries = await Delivery.find({
-            start: {
-              $gt: date,
-              $lt: date + DAY
-            }
-          }).sort({'start': 1})
-          if (deliveries.length === 0) return `There are no deliveries scheduled for ${toDateString(date)}.`
-          let ret = 'Deliveries:\n';
-          deliveries.forEach(delivery => {
-            ret = ret.concat(`${toTimeString(getTime(delivery.start))}- ${toTimeString(getTime(delivery.end))}: ${delivery.description} for ${delivery.company}\n`);
-          })
-          return ret;
-
-        case 'new':
+          user.schedule = {
+            'date': date
+          }
+          user.state = 'schedule';
+          break;
+        }
+          
+        case 'new': {
+          console.log("hello");
           user.state = 'delivery';
           user.delivery = {
             state: 'date',
           };
+          break;
+        }
+          
+        case 'info': {
+          user.state = 'info';
+          break;
+        }
+         
+        case 'map': {
+          user.state = 'map';
+          break;
+        }
+        default: {
+          user.state = 'error';
+        }
+      }
+    }  
+  }
+  console.log(user.delivery);
+  switch (user.state) {
+
+    case 'delivery': {
+      switch (user.delivery.state) {
+        case 'date': {
           user.save();
           return 'What is the date for your delivery (MM/DD)?';
+        }
+        case 'time': {
+          user.save();
+          return 'What is the start time of your delivery (HH:MM AM/PM)?';
+        }
+        case 'company': {
+          user.save();
+          const companies = await Company.find({});
+          let ret = "Please respond with the number of your company:\n";
+          for (let i=0; i<companies.length; i++) {
+            ret = ret + `${i+1}: ${companies[i].name}\n`;
+          }
+          return ret;
 
-        case 'info':
-          return "Reply 'new' to schedule a new delivery.\nReply 'schedule' to see the schedule for a day.\nReply 'cancel' to cancel delivery request";
+        }
+        case 'description': {
+          user.save();
+          return 'What is the item being delivered?';
+        }
+        case 'gate': {
+          user.save();
+          const gates = await Gate.find({});
+          let ret = "Please respond with the number of your gate:\n";
+          for (let i=0; i<gates.length; i++) {
+            ret = ret + `${i+1}: ${gates[i].name}\n`;
+          }
+          return ret;
+        }
+
+        case 'trucks': {
+          user.save();
+          return 'How many trucks are needed for your delivery?';
+        }
+
+        case 'contactName': {
+          user.save();
+          return 'Who is the contact for your delivery?';
+        }
+
+        case 'contactNumber': {
+          user.save();
+          return 'What is the number of the contact for your delivery? Reply "same" if you are using the contact number to schedule this delivery.';
+        }
         
-        case 'map':
-          return "Site Map:"
+        case 'notes': {
+          user.save();
+          return "Please reply with any additional notes for your delivery (reply 'done' for no note)";
+        }
 
-        default: 
-          return "Your command could not be understood. reply 'info' for a list of commands";
+        case 'complete': {
+          user.save();
+          return displayDelivery(user.delivery).concat("\n\n","Reply 'yes' to confirm or 'no' to make changes.");
+        }
+          
+        case 'edit': {
+          user.save();
+          return 'Which field needs to be updated?';
+        }
+        case 'save': {
+          user.delivery = undefined;
+          user.state = 'default';
+          user.save();
+          return 'Your delivery has been scheduled.\nThank You.';
+        }
+      }    
+    }  
+
+    case 'schedule': {
+      if (user.schedule.date === undefined) {
+        user.save();
+        return 'What date (MM/DD) do you want to view?';
       }
+      const deliveries = await Delivery.find({
+        start: {
+          $gt: user.schedule.date,
+          $lt: user.schedule.date + DAY
+        }
+      }).sort({'start': 1})
+      if (deliveries.length === 0) return `There are no deliveries scheduled for ${toDateString(user.schedule.date)}.`
+      let ret = 'Deliveries:\n';
+      deliveries.forEach(delivery => {
+        ret = ret.concat(`${toTimeString(getTime(delivery.start))}- ${toTimeString(getTime(delivery.end))}: ${delivery.description} for ${delivery.company}\n`);
+      })
+      user.state = 'default';
+      user.save();
+      return ret;
     }
-      
+    case 'info': {
+      user.state = 'default';
+      user.save();
+      return "Reply 'new' to schedule a new delivery.\nReply 'schedule' to see the schedule for a day.\nReply 'cancel' to cancel delivery request";
     }
+    case 'map': {
+      user.state = 'default';
+      user.save();
+      return"Site Map:";
+    }
+    case 'error': {
+      user.state = 'default';
+      user.save();
+      return "Your command could not be understood. reply 'info' for a list of commands";
+    }
+    case 'cancel': {
+      user.state = 'default';
+      user.save();
+      return "Your delivery has been cancelled.";
+    }
+
+  }
 };
 
 const displayDelivery = (delivery) => {
@@ -342,7 +348,7 @@ const displayDelivery = (delivery) => {
   Company: ${delivery.company}
   Description: ${delivery.description}
   Gate: ${delivery.gate}
-  Location: ${delivery.location}
+  Trucks: ${delivery.trucks}
   Contact Name: ${delivery.contactName}
   Contact Number: ${delivery.contactNumber}
   Notes: ${delivery.notes}`;

@@ -30,14 +30,13 @@ const Delivery = ( { delivery, setDelivery, setEditMode} ) => {
       Company: {delivery.company || 'N/A'}<br/>
       Description: {delivery.description || 'N/A'}<br/>
       Gate: {delivery.gate || 'N/A'}<br/>
+      Number of Trucks: {delivery.trucks || 'N/A'}<br/>
       Contact Name: {delivery.contactName || 'N/A'}<br/>
       Contact Number: {delivery.contactNumber || 'N/A'}<br/>
-      Location: {delivery.location || 'N/A'}<br/>
       Scheduler Name: {delivery.schedName || 'N/A'}<br/>
       Scheduler Number: {delivery.schedNumber || 'N/A'}<br/>
       Supplier: {delivery.supplier || 'N/A'}<br/>
       Hoist Method: {delivery.hoistMethod || 'N/A'}<br/>
-      Number of Trucks: {delivery.trucks || 'N/A'}<br/>
       Extra Notes: {delivery.notes || 'N/A'}<br/>
       Approved: {delivery.approved ? 'Yes':'No'}<br/>
       Completed: {delivery.completed ? 'Yes':'No'}<br/>

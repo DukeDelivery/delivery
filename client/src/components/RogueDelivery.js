@@ -78,6 +78,10 @@ const RogueDelivery = () => {
             {gates.map(gate => <option value={gate.name}>{gate.name}</option>)}
           </select>
         </div>
+        <div className='table-row'>
+          <p className='table-cell'>Number of Trucks:</p>
+          <input type='number' value={delivery.trucks || ''} onChange={x => handleChange(x.target.value, 'trucks')} required/>
+        </div>
         <div className="table-row">
           <p className='table-cell'>Contact Name:</p>
           <input className='table-cell' type='text' value={delivery.contactName || ''} onChange={x => handleChange(x.target.value, 'contactName')} required />
@@ -85,10 +89,6 @@ const RogueDelivery = () => {
         <div className="table-row">
           <p className='table-cell'>Contact Number:</p>
           <input className='table-cell' type='tel' value={delivery.contactNumber || ''} onChange={x => handleChange(x.target.value, 'contactNumber')} required />
-        </div>
-        <div className="table-row">
-          <p className='table-cell'>Location:</p>
-          <input className='table-cell' type='text' value={delivery.location || ''} onChange={x => handleChange(x.target.value, 'location')} required />
         </div>
         <div className='table-row'>
           <p className='table-cell'>Scheduler Name:</p>
@@ -105,10 +105,6 @@ const RogueDelivery = () => {
         <div className='table-row'>
           <p className='table-cell'>Hoist Method:</p>
           <input type='text' value={delivery.hoistMethod || ''} onChange={x => handleChange(x.target.value, 'hoistMethod')} />
-        </div>
-        <div className='table-row'>
-          <p className='table-cell'>Number of Trucks:</p>
-          <input type='number' value={delivery.trucks || ''} onChange={x => handleChange(x.target.value, 'trucks')} />
         </div>
         <div className='table-row'>
           <p className='table-cell'>Extra Notes</p>

@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     contactName: String,
     contactNumber: String,
     gate: String, 
-    location: String,
+    trucks: Number,
     notes: String,
   }
 });

@@ -3,11 +3,12 @@ import db from '../utils/request';
 import { toTimeString, toMilliseconds, DAY, MIN } from '../utils/time';
 
 const Form = () => {
-  const [delivery, setDelivery] = useState({duration: 60});
+  const [delivery, setDelivery] = useState({duration: 30});
   const [gates, setGates] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [times, setTimes] = useState({});
   const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const durations = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420, 450, 480];
 
   const handleChange = (data, field) => {
     setDelivery({
@@ -19,7 +20,7 @@ const Form = () => {
   const submitForm = (event) => {
     event.preventDefault();
     delivery.start = toMilliseconds(delivery.start);
-    delivery.end = parseInt(delivery.start) + parseInt(delivery.duration);
+    delivery.end = parseInt(delivery.start) + parseInt(delivery.duration)*MIN;
     for (const field in delivery) {
       if (delivery[field] === '') delivery[field] = null;
     }
@@ -47,6 +48,7 @@ const Form = () => {
     }
     delivery.start = new Date(delivery.date).valueOf() + delivery.start + new Date(delivery.date).getTimezoneOffset()*MIN;
     delivery.end = new Date(delivery.date).valueOf() + delivery.end + new Date(delivery.date).getTimezoneOffset()*MIN;
+
     delivery.approved = false;
     delivery.duration = undefined;
     delivery.date = undefined;
@@ -76,8 +78,11 @@ const Form = () => {
           <input className='table-cell' type='time' value={delivery.start || ''} onChange={x => handleChange(x.target.value, 'start')} required />
         </div>
         <div className="table-row">
-          <p className='table-cell'>Duration (minutes):</p>
-          <input className='table-cell' type='number' value={delivery.duration || ''} onChange={x => handleChange(x.target.value, 'duration')} required />
+          <p className='table-cell'>Duration:</p>
+          <select className='table-cell' onChange={x => handleChange(x.target.value, 'duration')} required>
+            <option selected value={30}>0.5 hours</option>
+            {durations.map(len => <option value={len}>{len / 60.0} hours</option>)}
+          </select>
         </div>
         <div className="table-row">
           <p className='table-cell'>Company:</p>
@@ -97,6 +102,10 @@ const Form = () => {
             {gates.map(gate => <option  key={gate.name} value={gate.name}>{gate.name}</option>)}
           </select>
         </div>
+        <div className='table-row'>
+          <p className='table-cell'>Number of Trucks:</p>
+          <input type='number' value={delivery.trucks || ''} onChange={x => handleChange(x.target.value, 'trucks')} required/>
+        </div>
         <div className="table-row">
           <p className='table-cell'>Contact Name:</p>
           <input className='table-cell' type='text' value={delivery.contactName || ''} onChange={x => handleChange(x.target.value, 'contactName')} required />
@@ -104,10 +113,6 @@ const Form = () => {
         <div className="table-row">
           <p className='table-cell'>Contact Number:</p>
           <input className='table-cell' type='tel' value={delivery.contactNumber || ''} onChange={x => handleChange(x.target.value, 'contactNumber')} required />
-        </div>
-        <div className="table-row">
-          <p className='table-cell'>Location:</p>
-          <input className='table-cell' type='text' value={delivery.location || ''} onChange={x => handleChange(x.target.value, 'location')} required />
         </div>
       </div>
       <h2>Optional Fields</h2>
@@ -127,10 +132,6 @@ const Form = () => {
         <div className='table-row'>
           <p className='table-cell'>Hoist Method:</p>
           <input type='text' value={delivery.hoistMethod || ''} onChange={x => handleChange(x.target.value, 'hoistMethod')} />
-        </div>
-        <div className='table-row'>
-          <p className='table-cell'>Number of Trucks:</p>
-          <input type='number' value={delivery.trucks || ''} onChange={x => handleChange(x.target.value, 'trucks')} />
         </div>
         <div className='table-row'>
           <p className='table-cell'>Extra Notes</p>
