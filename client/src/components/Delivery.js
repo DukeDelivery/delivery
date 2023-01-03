@@ -31,6 +31,7 @@ const Delivery = ( { delivery, setDelivery, setEditMode} ) => {
       Description: {delivery.description || 'N/A'}<br/>
       Gate: {delivery.gate || 'N/A'}<br/>
       Number of Trucks: {delivery.trucks || 'N/A'}<br/>
+      Drop-off Location: {delivery.location || 'N/A'}<br/>
       Contact Name: {delivery.contactName || 'N/A'}<br/>
       Contact Number: {delivery.contactNumber || 'N/A'}<br/>
       Scheduler Name: {delivery.schedName || 'N/A'}<br/>

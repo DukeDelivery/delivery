@@ -12,6 +12,7 @@ const deliverySchema = new mongoose.Schema({
   schedNumber: String,
   supplier: String,
   hoistMethod: String,
+  location: String,
   trucks: Number,
   notes: String,
   approved: Boolean,

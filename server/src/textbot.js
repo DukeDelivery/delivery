@@ -96,7 +96,12 @@ const main = async (req) => {
             return "Response could not be understood. Please respond with a number. Reply 'info' for help.";
           }
           user.delivery.trucks = parseInt(message);
-          user.delivery.state = "contactName";
+          user.delivery.state = "location";
+          break;
+        }
+        case 'location': {
+          user.delivery.location = message;
+          user.delivery.state = 'contactName';
           break;
         }
         case 'contactName': {
@@ -223,7 +228,6 @@ const main = async (req) => {
       }
     }  
   }
-  console.log(user.delivery);
   switch (user.state) {
 
     case 'delivery': {
@@ -263,6 +267,11 @@ const main = async (req) => {
         case 'trucks': {
           user.save();
           return 'How many trucks are needed for your delivery?';
+        }
+
+        case 'location': {
+          user.save();
+          return 'What is the drop-off location for your delivery?';
         }
 
         case 'contactName': {
@@ -349,6 +358,7 @@ const displayDelivery = (delivery) => {
   Description: ${delivery.description}
   Gate: ${delivery.gate}
   Trucks: ${delivery.trucks}
+  Location: ${delivery.location}
   Contact Name: ${delivery.contactName}
   Contact Number: ${delivery.contactNumber}
   Notes: ${delivery.notes}`;

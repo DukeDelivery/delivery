@@ -83,6 +83,10 @@ const RogueDelivery = () => {
           <input type='number' value={delivery.trucks || ''} onChange={x => handleChange(x.target.value, 'trucks')} required/>
         </div>
         <div className="table-row">
+          <p className='table-cell'>Drop-off Location:</p>
+          <textarea className='table-cell' value={delivery.location || ''} onChange={x => handleChange(x.target.value, 'location')} required />
+        </div>
+        <div className="table-row">
           <p className='table-cell'>Contact Name:</p>
           <input className='table-cell' type='text' value={delivery.contactName || ''} onChange={x => handleChange(x.target.value, 'contactName')} required />
         </div>
