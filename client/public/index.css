@@ -29,6 +29,7 @@ footer {
 }
 body {
   margin: 0;
+  min-width: 1000px;
 }
 button, input, textarea, select {
   border-color: gray;
@@ -63,7 +64,6 @@ button, input[type=submit] {
   margin-bottom: 5%;
   height: 1000px;
   width: 80%;
-  min-width: 1000px;
   background-color: white;
 }
 form {

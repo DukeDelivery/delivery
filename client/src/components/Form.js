@@ -29,8 +29,8 @@ const Form = () => {
       window.scrollTo(0, 0);
       return;
     }
-    if (delivery.end + new Date(delivery.date).valueOf() - new Date().valueOf() < 2*DAY) {
-      alert('Deliveries must be scheduled 48 hours in advance.');
+    if (delivery.end + new Date(delivery.date).valueOf() - new Date().valueOf() < DAY) {
+      alert('Deliveries must be scheduled 24 hours in advance.');
       return;
     }
     const day = weekdays[new Date(delivery.date).getUTCDay()];
@@ -52,11 +52,11 @@ const Form = () => {
     delivery.approved = false;
     delivery.duration = undefined;
     delivery.date = undefined;
+    setDelivery({});
+    window.location.reload();
     db.post('delivery', delivery).then(() => {
       alert('Your delivery has been saved.');
     });
-    setDelivery({});
-    window.scrollTo(0, 0);
   }
 
   useEffect(() => {
