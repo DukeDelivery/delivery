@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import AdminContext from '../contexts/AdminContext';
 import db from '../utils/request';
 import { toTimeString, toMilliseconds, DAY, MIN } from '../utils/time';
 
@@ -9,6 +10,7 @@ const Form = () => {
   const [times, setTimes] = useState({});
   const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const durations = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420, 450, 480];
+  const {admin} = useContext(AdminContext);
 
   const handleChange = (data, field) => {
     setDelivery({
@@ -29,22 +31,24 @@ const Form = () => {
       window.scrollTo(0, 0);
       return;
     }
-    if (delivery.end + new Date(delivery.date).valueOf() - new Date().valueOf() < DAY) {
+    if (!admin) {
+      if (delivery.end + new Date(delivery.date).valueOf() - new Date().valueOf() < DAY) {
       alert('Deliveries must be scheduled 24 hours in advance.');
       return;
-    }
-    const day = weekdays[new Date(delivery.date).getUTCDay()];
-    if (!times[day].active) {
-      alert(`Deliveries cannot be scheduled on ${day}s`);
-      window.scrollTo(0, 0);
-      return;
-    }
-    if (delivery.start < times[day].start || delivery.end > times[day].end) {
-      console.log(delivery.end);
-      console.log(times[day].end);
-      alert(`Deliveries on ${day}s must be between ${toTimeString(times[day].start)} and ${toTimeString(times[day].end)}.`);
-      window.scrollTo(0, 0);
-      return;
+      }
+      const day = weekdays[new Date(delivery.date).getUTCDay()];
+      if (!times[day].active) {
+        alert(`Deliveries cannot be scheduled on ${day}s`);
+        window.scrollTo(0, 0);
+        return;
+      }
+      if (delivery.start < times[day].start || delivery.end > times[day].end) {
+        console.log(delivery.end);
+        console.log(times[day].end);
+        alert(`Deliveries on ${day}s must be between ${toTimeString(times[day].start)} and ${toTimeString(times[day].end)}.`);
+        window.scrollTo(0, 0);
+        return;
+      }
     }
     delivery.start = new Date(delivery.date).valueOf() + delivery.start + new Date(delivery.date).getTimezoneOffset()*MIN;
     delivery.end = new Date(delivery.date).valueOf() + delivery.end + new Date(delivery.date).getTimezoneOffset()*MIN;
